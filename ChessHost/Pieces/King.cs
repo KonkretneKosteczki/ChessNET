@@ -11,17 +11,22 @@ namespace ChessHost.Pieces
     public class King : ChessPiece
     {
         [DataMember]
-        public Tuple<Rook, Rook> Castling;
+        private Tuple<bool, bool> _castling = new Tuple<bool, bool>(true,true);
 
-        public King(Tuple<int, int> position, Player player, Rook rook1, Rook rook2)
+        public Tuple<bool, bool> Castling
+        {
+            get => _castling;
+            set => _castling = value;
+        }
+
+        public King(Tuple<int, int> position, Player player)
             : base(position, player, ChessPieceType.King)
         {
-            Castling = new Tuple<Rook, Rook>(rook1, rook2);
         }
 
         public override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
         {
-            Tuple<int, int> currentPosition = GetPosition();
+            Tuple<int, int> currentPosition = Position;
             List<Tuple<int, int>> allMoves = new List<Tuple<int, int>>();
 
             for (int i = -1; i <= 1; i++) // square 3x3 with king in the center
@@ -41,14 +46,14 @@ namespace ChessHost.Pieces
             }
 
             // Castling
-            if (Castling.Item2.CanCastle &&
+            if (Castling.Item2 &&
                 cb.GetPieceInPosition(new Tuple<int, int>(currentPosition.Item1 + 1, currentPosition.Item2)) == null)
                 //// K _ _ R => _ R K _
                 // manually checking K+1, K+2 will be checked by AddMoveIfAvailable
                 // Castling.Item2 has information on castled rook/king being moved in the past
                 AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1, currentPosition.Item2 + 2), ref cb,
                     ref allMoves);
-            if (Castling.Item1.CanCastle &&
+            if (Castling.Item1 &&
                 cb.GetPieceInPosition(new Tuple<int, int>(currentPosition.Item1 - 1, currentPosition.Item2)) == null &&
                 cb.GetPieceInPosition(new Tuple<int, int>(currentPosition.Item1 - 3, currentPosition.Item2)) == null)
                 //// R _ _ _ K => _ _ K R _

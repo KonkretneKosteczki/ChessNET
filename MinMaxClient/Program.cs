@@ -16,7 +16,7 @@ namespace MinMaxClient
         //            foreach (var move in moves)
         //            {
         //                Console.WriteLine("{0},{1}",
-        //                    move.Item1.GetPosition().Item1, move.Item1.GetPosition().Item2);
+        //                    move.Item1.Position().Item1, move.Item1.Position().Item2);
         //                foreach (var m in move.Item2)
         //                    Console.Write("{0},{1}; ",m.Item1, m.Item2);
         //                Console.WriteLine("\n");

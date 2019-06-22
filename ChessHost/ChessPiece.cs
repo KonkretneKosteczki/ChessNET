@@ -65,9 +65,10 @@ namespace ChessHost
             return pos.Item1 >= 0 && pos.Item1 <= 7 && pos.Item2 >= 0 && pos.Item2 <= 7;
         }
 
-        public Tuple<int, int> GetPosition()
+        public Tuple<int, int> Position
         {
-            return _position;
+            get => _position;
+            set => _position = value;
         }
 
         public ChessPieceType GetPieceType()

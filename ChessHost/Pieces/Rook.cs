@@ -17,11 +17,17 @@ namespace ChessHost.Pieces
         }
 
         [DataMember]
-        public bool CanCastle = true;
+        private bool _canCastle = true;
+
+        public bool CanCastle
+        {
+            get => _canCastle;
+            set => _canCastle = value;
+        }
 
         public override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
         {
-            Tuple<int, int> currentPosition = GetPosition();
+            Tuple<int, int> currentPosition = Position;
             List<Tuple<int, int>> allMoves = new List<Tuple<int, int>>();
 
             for (int i = currentPosition.Item1 + 1; i < 8; i++) // moves down

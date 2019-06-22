@@ -17,7 +17,7 @@ namespace ChessHost.Pieces
 
         public override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
         {
-            Tuple<int, int> position = GetPosition();
+            Tuple<int, int> position = Position;
             List<Tuple<int, int>>
                 nonCaptureMoves = new List<Tuple<int, int>>(),
                 captureMoves = new List<Tuple<int, int>>(),

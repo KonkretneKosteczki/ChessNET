@@ -17,7 +17,7 @@ namespace ChessHost.Pieces
 
         public override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
         {
-            Tuple<int, int> currentPosition = GetPosition();
+            Tuple<int, int> currentPosition = Position;
             List<Tuple<int, int>> allMoves = new List<Tuple<int, int>>();
 
             for (int i = 1; i <= Math.Min(currentPosition.Item1, currentPosition.Item2); i++) // top-left diagonal

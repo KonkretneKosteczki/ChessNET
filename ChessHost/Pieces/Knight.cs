@@ -22,7 +22,7 @@ namespace ChessHost.Pieces
 
         public override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
         {
-            Tuple<int, int> currentPosition = GetPosition();
+            Tuple<int, int> currentPosition = Position;
             List<Tuple<int, int>> allMoves = new List<Tuple<int, int>>();
 
             addValidatedMove(new Tuple<int, int>(currentPosition.Item1 + 1, currentPosition.Item2 + 2), ref cb,

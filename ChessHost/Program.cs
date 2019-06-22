@@ -30,16 +30,22 @@ namespace ChessHost
         {
             ChessBoard cb = new ChessBoard();
             cb.PrintBoard();
-
-            List<Tuple<ChessPiece, List<Tuple<int, int>>>> moves = cb.GetAllPossibleMoves();
-            foreach (var move in moves)
+            bool debug = true;
+            while (debug)
             {
-                Console.WriteLine("{0},{1}",
-                    move.Item1.GetPosition().Item1, move.Item1.GetPosition().Item2);
-                foreach (var m in move.Item2)
-                    Console.Write("{0},{1}; ",m.Item1, m.Item2);
-                Console.WriteLine("\n");
+                if (cb.MovePiece(Console.ReadLine()))
+                    cb.PrintBoard();
             }
+
+            //            List<Tuple<ChessPiece, List<Tuple<int, int>>>> moves = cb.GetAllPossibleMoves();
+            //            foreach (var move in moves)
+            //            {
+            //                Console.WriteLine("{0},{1}",
+            //                    move.Item1.Position().Item1, move.Item1.Position().Item2);
+            //                foreach (var m in move.Item2)
+            //                    Console.Write("{0},{1}; ",m.Item1, m.Item2);
+            //                Console.WriteLine("\n");
+            //            }
 
             Serializator ser = new Serializator();
             string BoardState = ser.WriteFromObject(cb);

@@ -33,31 +33,27 @@ namespace ChessHost
         {
             for (int i = 0; i < 8; i++)
             {
-//                Pieces.Add(new Tuple<int, int>(6, i), new Pawn(new Tuple<int, int>(6, i), Player.White));
-//                Pieces.Add(new Tuple<int, int>(1, i), new Pawn(new Tuple<int, int>(1, i), Player.Black));
+                Pieces.Add(new Tuple<int, int>(6, i), new Pawn(new Tuple<int, int>(6, i), Player.White));
+                Pieces.Add(new Tuple<int, int>(1, i), new Pawn(new Tuple<int, int>(1, i), Player.Black));
             }
 
             Pieces.Add(new Tuple<int, int>(7, 0), new Rook(new Tuple<int, int>(7, 0), Player.White));
-//            Pieces.Add(new Tuple<int, int>(7, 1), new Knight(new Tuple<int, int>(7, 1), Player.White));
-//            Pieces.Add(new Tuple<int, int>(7, 2), new Bishop(new Tuple<int, int>(7, 2), Player.White));
-//            Pieces.Add(new Tuple<int, int>(7, 3), new Queen(new Tuple<int, int>(7, 3), Player.White));
-//            Pieces.Add(new Tuple<int, int>(7, 5), new Bishop(new Tuple<int, int>(7, 5), Player.White));
-//            Pieces.Add(new Tuple<int, int>(7, 6), new Knight(new Tuple<int, int>(7, 6), Player.White));
+            Pieces.Add(new Tuple<int, int>(7, 1), new Knight(new Tuple<int, int>(7, 1), Player.White));
+            Pieces.Add(new Tuple<int, int>(7, 2), new Bishop(new Tuple<int, int>(7, 2), Player.White));
+            Pieces.Add(new Tuple<int, int>(7, 3), new Queen(new Tuple<int, int>(7, 3), Player.White));
+            Pieces.Add(new Tuple<int, int>(7, 5), new Bishop(new Tuple<int, int>(7, 5), Player.White));
+            Pieces.Add(new Tuple<int, int>(7, 6), new Knight(new Tuple<int, int>(7, 6), Player.White));
             Pieces.Add(new Tuple<int, int>(7, 7), new Rook(new Tuple<int, int>(7, 7), Player.White));
-            Pieces.Add(new Tuple<int, int>(7, 4), new King(new Tuple<int, int>(7, 4), Player.White,
-                (Rook) Pieces[new Tuple<int, int>(7, 7)],
-                (Rook) Pieces[new Tuple<int, int>(7, 0)]));
+            Pieces.Add(new Tuple<int, int>(7, 4), new King(new Tuple<int, int>(7, 4), Player.White));
 
             Pieces.Add(new Tuple<int, int>(0, 0), new Rook(new Tuple<int, int>(0, 0), Player.Black));
-//            Pieces.Add(new Tuple<int, int>(0, 1), new Knight(new Tuple<int, int>(0, 1), Player.Black));
-//            Pieces.Add(new Tuple<int, int>(0, 2), new Bishop(new Tuple<int, int>(0, 2), Player.Black));
-//            Pieces.Add(new Tuple<int, int>(0, 3), new Queen(new Tuple<int, int>(0, 3), Player.Black));
-//            Pieces.Add(new Tuple<int, int>(0, 5), new Bishop(new Tuple<int, int>(0, 5), Player.Black));
-//            Pieces.Add(new Tuple<int, int>(0, 6), new Knight(new Tuple<int, int>(0, 6), Player.Black));
+            Pieces.Add(new Tuple<int, int>(0, 1), new Knight(new Tuple<int, int>(0, 1), Player.Black));
+            Pieces.Add(new Tuple<int, int>(0, 2), new Bishop(new Tuple<int, int>(0, 2), Player.Black));
+            Pieces.Add(new Tuple<int, int>(0, 3), new Queen(new Tuple<int, int>(0, 3), Player.Black));
+            Pieces.Add(new Tuple<int, int>(0, 5), new Bishop(new Tuple<int, int>(0, 5), Player.Black));
+            Pieces.Add(new Tuple<int, int>(0, 6), new Knight(new Tuple<int, int>(0, 6), Player.Black));
             Pieces.Add(new Tuple<int, int>(0, 7), new Rook(new Tuple<int, int>(0, 7), Player.Black));
-            Pieces.Add(new Tuple<int, int>(0, 4), new King(new Tuple<int, int>(0, 4), Player.Black,
-                (Rook) Pieces[new Tuple<int, int>(0, 7)],
-                (Rook) Pieces[new Tuple<int, int>(0, 0)]));
+            Pieces.Add(new Tuple<int, int>(0, 4), new King(new Tuple<int, int>(0, 4), Player.Black));
         }
 
         [DataMember] private readonly Dictionary<char, int> _positionCodes = new Dictionary<char, int>
@@ -104,25 +100,84 @@ namespace ChessHost
             return false;
         }
 
-        public bool MovePiece(Tuple<int, int> pStart, Tuple<int, int> pEnd)
+        public bool MovePiece(Tuple<int, int> pStart, Tuple<int, int> pEnd, bool validateKingExposure=true)
         {
             if (Pieces.TryGetValue(pStart, out ChessPiece piece)) // check if piece even exists
             {
                 if (piece.GetPlayer() == _currentPlayer) // compare the piece with player
                 {
+                    if (validateKingExposure)
+                    {
+                        // create and perform operations on deep copy for validation purposes
+
+                        Serializator ser = new Serializator();
+                        ChessPiece chessPieceCopy = ser.ReadPieceToObject(ser.WriteFromObject(piece));
+                        ChessBoard chessBoardCopy = ser.ReadToObject(ser.WriteFromObject(this));
+
+                        if (chessPieceCopy.MovePiece(pEnd, chessBoardCopy))
+                        {
+                            chessBoardCopy.Pieces[pEnd] = Pieces[pStart];
+                            chessBoardCopy.Pieces.Remove(pStart);
+                            foreach (var movablePiece in chessBoardCopy.GetAllPossibleMoves())
+                                if (movablePiece.Item1.GetPlayer() != _currentPlayer) //only enemy moves
+                                    foreach (var position in movablePiece.Item2) // moves of those pieces
+                                    {
+                                        ChessPiece cpInPosition = chessBoardCopy.GetPieceInPosition(position);
+                                        if (cpInPosition != null && cpInPosition.GetType() == typeof(King)) // if any piece would end on king ban the move
+                                            return false;
+                                    } 
+                        }
+                        else return false;
+                    }
                     if (piece.MovePiece(pEnd, this)) // validates move, updates piece parameters if possible
                     {
                         Pieces[pEnd] = Pieces[pStart];
                         Pieces.Remove(pStart);
                         _currentPlayer = (_currentPlayer == Player.White) ? Player.Black : Player.White;
 
-                        if (piece.GetType() == typeof(Rook)) ((Rook) piece).CanCastle = false;
+                        if (piece.GetType() == typeof(Rook))
+                        {
+                            // try to get king and update its castling
+                            // no need for action if king not in default position (moved before)
+                            Rook rook = (Rook) piece;
+                            if (rook.CanCastle)
+                            {
+                                King king = (King)GetPieceInPosition(new Tuple<int, int>(pStart.Item1, 4));
+                                if (king != null)
+                                {
+                                    // can use rook's starting position to define if its left or right because
+                                    // if it moved in the past (ex. right rook moved to leftmost space)
+                                    // still rook.CanCastle == false so would not even enter here
+                                    if (pStart.Item2 == 0) // left rook
+                                        king.Castling = new Tuple<bool, bool>(false, king.Castling.Item2);
+                                    else // right rook
+                                        king.Castling = new Tuple<bool, bool>(king.Castling.Item1, false);
+                                    rook.CanCastle = false;
+                                }
+                            }
+                        }
                         if (piece.GetType() == typeof(King))
                         {
-                            Tuple<Rook, Rook> castling = ((King) piece).Castling;
-                            castling.Item1.CanCastle = false;
-                            castling.Item2.CanCastle = false;
-                            // TODO: implement rook move during castling
+                            ((King) piece).Castling = new Tuple<bool, bool>(false,false);
+                            // king moved by 2 spaces so castling
+                            if (pStart.Item2 - pEnd.Item2 == -2) // move to the right
+                            {
+                                Tuple<int, int> rookStart = new Tuple<int, int>(pEnd.Item1, 7),
+                                    rookEnd = new Tuple<int, int>(pEnd.Item1, 5);
+                                GetPieceInPosition(rookStart).Position = rookEnd;
+
+                                Pieces[rookEnd] = Pieces[rookStart];
+                                Pieces.Remove(rookStart);
+                            }
+                            else if (pStart.Item2 - pEnd.Item2 == 2)
+                            {
+                                Tuple<int, int> rookStart= new Tuple<int, int>(pEnd.Item1, 0), 
+                                    rookEnd = new Tuple<int, int>(pEnd.Item1, 3);
+                                GetPieceInPosition(rookStart).Position=rookEnd;
+
+                                Pieces[rookEnd] = Pieces[rookStart];
+                                Pieces.Remove(rookStart);
+                            }
                         }
 
                         return true;
