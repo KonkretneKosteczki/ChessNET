@@ -57,7 +57,7 @@ namespace ChessHost
             return GetPossibleMoves(cb).Contains(whereTo);
         }
 
-        protected abstract List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb);
+        public abstract List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb);
 
         public bool ValidatePosition(Tuple<int, int> pos)
         {

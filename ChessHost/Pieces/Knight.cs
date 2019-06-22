@@ -15,26 +15,31 @@ namespace ChessHost.Pieces
         {
         }
 
-        protected override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
+        private void addValidatedMove(Tuple<int,int> move, ref ChessBoard cb, ref List<Tuple<int,int>> allMoves)
+        {
+            if (ValidatePosition(move)) AddMoveIfAvailable(move, ref cb, ref allMoves);
+        }
+
+        public override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
         {
             Tuple<int, int> currentPosition = GetPosition();
             List<Tuple<int, int>> allMoves = new List<Tuple<int, int>>();
 
-            AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 + 1, currentPosition.Item2 + 2), ref cb,
+            addValidatedMove(new Tuple<int, int>(currentPosition.Item1 + 1, currentPosition.Item2 + 2), ref cb,
                 ref allMoves);
-            AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 + 1, currentPosition.Item2 - 2), ref cb,
+            addValidatedMove(new Tuple<int, int>(currentPosition.Item1 + 1, currentPosition.Item2 - 2), ref cb,
                 ref allMoves);
-            AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 - 1, currentPosition.Item2 + 2), ref cb,
+            addValidatedMove(new Tuple<int, int>(currentPosition.Item1 - 1, currentPosition.Item2 + 2), ref cb,
                 ref allMoves);
-            AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 - 1, currentPosition.Item2 - 2), ref cb,
+            addValidatedMove(new Tuple<int, int>(currentPosition.Item1 - 1, currentPosition.Item2 - 2), ref cb,
                 ref allMoves);
-            AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 + 2, currentPosition.Item2 + 1), ref cb,
+            addValidatedMove(new Tuple<int, int>(currentPosition.Item1 + 2, currentPosition.Item2 + 1), ref cb,
                 ref allMoves);
-            AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 + 2, currentPosition.Item2 - 1), ref cb,
+            addValidatedMove(new Tuple<int, int>(currentPosition.Item1 + 2, currentPosition.Item2 - 1), ref cb,
                 ref allMoves);
-            AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 - 2, currentPosition.Item2 + 1), ref cb,
+            addValidatedMove(new Tuple<int, int>(currentPosition.Item1 - 2, currentPosition.Item2 + 1), ref cb,
                 ref allMoves);
-            AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 - 2, currentPosition.Item2 - 1), ref cb,
+            addValidatedMove(new Tuple<int, int>(currentPosition.Item1 - 2, currentPosition.Item2 - 1), ref cb,
                 ref allMoves);
             
             return allMoves;

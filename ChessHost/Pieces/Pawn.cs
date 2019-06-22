@@ -15,7 +15,7 @@ namespace ChessHost.Pieces
         {
         }
 
-        protected override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
+        public override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
         {
             Tuple<int, int> position = GetPosition();
             List<Tuple<int, int>>

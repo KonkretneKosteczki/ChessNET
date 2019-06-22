@@ -9,41 +9,58 @@ namespace ChessHost
     [DataContract]
     public class ChessBoard
     {
-        [DataMember]
-        private Player _currentPlayer = Player.White;
+        [DataMember] private Player _currentPlayer = Player.White;
 
         [DataMember]
         public Dictionary<Tuple<int, int>, ChessPiece> Pieces = new Dictionary<Tuple<int, int>, ChessPiece>();
+
+        public List<Tuple<ChessPiece, List<Tuple<int, int>>>> GetAllPossibleMoves()
+        {
+            List<Tuple<ChessPiece, List<Tuple<int, int>>>> allMoves =
+                new List<Tuple<ChessPiece, List<Tuple<int, int>>>>();
+            foreach (KeyValuePair<Tuple<int, int>, ChessPiece> pieceObject in Pieces)
+            {
+                allMoves.Add(new Tuple<ChessPiece, List<Tuple<int, int>>>(
+                    pieceObject.Value,
+                    pieceObject.Value.GetPossibleMoves(this)
+                ));
+            }
+
+            return allMoves;
+        }
 
         public ChessBoard()
         {
             for (int i = 0; i < 8; i++)
             {
-                Pieces.Add(new Tuple<int, int>(6, i), new Pawn(new Tuple<int, int>(6, i), Player.White));
-                Pieces.Add(new Tuple<int, int>(1, i), new Pawn(new Tuple<int, int>(1, i), Player.Black));
+//                Pieces.Add(new Tuple<int, int>(6, i), new Pawn(new Tuple<int, int>(6, i), Player.White));
+//                Pieces.Add(new Tuple<int, int>(1, i), new Pawn(new Tuple<int, int>(1, i), Player.Black));
             }
 
             Pieces.Add(new Tuple<int, int>(7, 0), new Rook(new Tuple<int, int>(7, 0), Player.White));
-            Pieces.Add(new Tuple<int, int>(7, 1), new Knight(new Tuple<int, int>(7, 1), Player.White));
-            Pieces.Add(new Tuple<int, int>(7, 2), new Bishop(new Tuple<int, int>(7, 2), Player.White));
-            Pieces.Add(new Tuple<int, int>(7, 3), new Queen(new Tuple<int, int>(7, 3), Player.White));
-            Pieces.Add(new Tuple<int, int>(7, 4), new King(new Tuple<int, int>(7, 4), Player.White));
-            Pieces.Add(new Tuple<int, int>(7, 5), new Bishop(new Tuple<int, int>(7, 5), Player.White));
-            Pieces.Add(new Tuple<int, int>(7, 6), new Knight(new Tuple<int, int>(7, 6), Player.White));
+//            Pieces.Add(new Tuple<int, int>(7, 1), new Knight(new Tuple<int, int>(7, 1), Player.White));
+//            Pieces.Add(new Tuple<int, int>(7, 2), new Bishop(new Tuple<int, int>(7, 2), Player.White));
+//            Pieces.Add(new Tuple<int, int>(7, 3), new Queen(new Tuple<int, int>(7, 3), Player.White));
+//            Pieces.Add(new Tuple<int, int>(7, 5), new Bishop(new Tuple<int, int>(7, 5), Player.White));
+//            Pieces.Add(new Tuple<int, int>(7, 6), new Knight(new Tuple<int, int>(7, 6), Player.White));
             Pieces.Add(new Tuple<int, int>(7, 7), new Rook(new Tuple<int, int>(7, 7), Player.White));
-//
+            Pieces.Add(new Tuple<int, int>(7, 4), new King(new Tuple<int, int>(7, 4), Player.White,
+                (Rook) Pieces[new Tuple<int, int>(7, 7)],
+                (Rook) Pieces[new Tuple<int, int>(7, 0)]));
+
             Pieces.Add(new Tuple<int, int>(0, 0), new Rook(new Tuple<int, int>(0, 0), Player.Black));
-            Pieces.Add(new Tuple<int, int>(0, 1), new Knight(new Tuple<int, int>(0, 1), Player.Black));
-            Pieces.Add(new Tuple<int, int>(0, 2), new Bishop(new Tuple<int, int>(0, 2), Player.Black));
-            Pieces.Add(new Tuple<int, int>(0, 3), new Queen(new Tuple<int, int>(0, 3), Player.Black));
-            Pieces.Add(new Tuple<int, int>(0, 4), new King(new Tuple<int, int>(0, 4), Player.Black));
-            Pieces.Add(new Tuple<int, int>(0, 5), new Bishop(new Tuple<int, int>(0, 5), Player.Black));
-            Pieces.Add(new Tuple<int, int>(0, 6), new Knight(new Tuple<int, int>(0, 6), Player.Black));
+//            Pieces.Add(new Tuple<int, int>(0, 1), new Knight(new Tuple<int, int>(0, 1), Player.Black));
+//            Pieces.Add(new Tuple<int, int>(0, 2), new Bishop(new Tuple<int, int>(0, 2), Player.Black));
+//            Pieces.Add(new Tuple<int, int>(0, 3), new Queen(new Tuple<int, int>(0, 3), Player.Black));
+//            Pieces.Add(new Tuple<int, int>(0, 5), new Bishop(new Tuple<int, int>(0, 5), Player.Black));
+//            Pieces.Add(new Tuple<int, int>(0, 6), new Knight(new Tuple<int, int>(0, 6), Player.Black));
             Pieces.Add(new Tuple<int, int>(0, 7), new Rook(new Tuple<int, int>(0, 7), Player.Black));
+            Pieces.Add(new Tuple<int, int>(0, 4), new King(new Tuple<int, int>(0, 4), Player.Black,
+                (Rook) Pieces[new Tuple<int, int>(0, 7)],
+                (Rook) Pieces[new Tuple<int, int>(0, 0)]));
         }
 
-        [DataMember]
-        private readonly Dictionary<char, int> _positionCodes = new Dictionary<char, int>
+        [DataMember] private readonly Dictionary<char, int> _positionCodes = new Dictionary<char, int>
         {
             ['A'] = 0,
             ['B'] = 1,
@@ -54,13 +71,9 @@ namespace ChessHost
             ['G'] = 6,
             ['H'] = 7,
         };
-        [DataMember]
-        private readonly List<char> _positionValues = new List<char>{'A', 'B', 'C', 'D', 'E', 'F', 'G','H'};
 
-        public string TransformPosition(Tuple<int, int> pos)
-        {
-            return _positionValues[pos.Item2] + (8 - pos.Item1).ToString();
-        }
+        [DataMember]
+        private readonly List<char> _positionValues = new List<char> {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'};
 
         public Tuple<int, int> TransformPosition(string pos)
         {
@@ -97,19 +110,26 @@ namespace ChessHost
             {
                 if (piece.GetPlayer() == _currentPlayer) // compare the piece with player
                 {
-                    // TODO: add check if check
                     if (piece.MovePiece(pEnd, this)) // validates move, updates piece parameters if possible
                     {
-//                        if (piece.GetType() == typeof(King)) // castling
-//                            ((King)piece).Castling = new Tuple<bool, bool>(false, false);
-
                         Pieces[pEnd] = Pieces[pStart];
                         Pieces.Remove(pStart);
                         _currentPlayer = (_currentPlayer == Player.White) ? Player.Black : Player.White;
+
+                        if (piece.GetType() == typeof(Rook)) ((Rook) piece).CanCastle = false;
+                        if (piece.GetType() == typeof(King))
+                        {
+                            Tuple<Rook, Rook> castling = ((King) piece).Castling;
+                            castling.Item1.CanCastle = false;
+                            castling.Item2.CanCastle = false;
+                            // TODO: implement rook move during castling
+                        }
+
                         return true;
                     }
                 }
             }
+
             return false;
         }
 
@@ -186,7 +206,5 @@ namespace ChessHost
 
             Console.WriteLine("  -----------------------------------------");
         }
-
-        
     }
 }

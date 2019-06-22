@@ -29,7 +29,17 @@ namespace ChessHost
         static void Main(string[] args)
         {
             ChessBoard cb = new ChessBoard();
-            cb.MovePiece("C2 C4");
+            cb.PrintBoard();
+
+            List<Tuple<ChessPiece, List<Tuple<int, int>>>> moves = cb.GetAllPossibleMoves();
+            foreach (var move in moves)
+            {
+                Console.WriteLine("{0},{1}",
+                    move.Item1.GetPosition().Item1, move.Item1.GetPosition().Item2);
+                foreach (var m in move.Item2)
+                    Console.Write("{0},{1}; ",m.Item1, m.Item2);
+                Console.WriteLine("\n");
+            }
 
             Serializator ser = new Serializator();
             string BoardState = ser.WriteFromObject(cb);
@@ -49,15 +59,23 @@ namespace ChessHost
 
             while (true)
             {
-                string dataFromClient1 = server.ReceiveRequest(server.Player1);
-                Console.WriteLine("RECEIVED: {0} from WHITE", dataFromClient1);
-                cb.MovePiece(dataFromClient1);
-                server.sendResponse(server.Player2, ser.WriteFromObject(cb));
+                try
+                {
+                    string dataFromClient1 = server.ReceiveRequest(server.Player1);
+                    Console.WriteLine("RECEIVED: {0} from WHITE", dataFromClient1);
+                    cb.MovePiece(dataFromClient1);
+                    server.sendResponse(server.Player2, ser.WriteFromObject(cb));
 
-                string dataFromClient2 = server.ReceiveRequest(server.Player2);
-                Console.WriteLine("RECEIVED {0} from BLACK", dataFromClient2);
-                cb.MovePiece(dataFromClient2);
-                server.sendResponse(server.Player1, ser.WriteFromObject(cb));
+                    string dataFromClient2 = server.ReceiveRequest(server.Player2);
+                    Console.WriteLine("RECEIVED {0} from BLACK", dataFromClient2);
+                    cb.MovePiece(dataFromClient2);
+                    server.sendResponse(server.Player1, ser.WriteFromObject(cb));
+                }
+                catch (SocketException e)
+                {
+                    // connection closed by client
+                    // TODO: send message about winning by walk over to other client
+                }
             }
         }
     }
@@ -67,7 +85,7 @@ namespace ChessHost
         public Socket Player1;
         public Socket Player2;
 
-        private Socket listener;
+        private Socket _listener;
 
         public string ReceiveRequest(Socket clientSocket)
         {
@@ -81,6 +99,7 @@ namespace ChessHost
                 if (msg.IndexOf("<EOF>", StringComparison.Ordinal) > -1)
                     break;
             }
+
             return msg.Substring(0, msg.LastIndexOf("<EOF>", StringComparison.Ordinal));
         }
 
@@ -99,15 +118,15 @@ namespace ChessHost
 
             try
             {
-                listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                listener.Bind(localEndPoint);
-                listener.Listen(2);
+                _listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                _listener.Bind(localEndPoint);
+                _listener.Listen(2);
 
                 Console.WriteLine("Waiting for connections... ");
 
-                Player1 = listener.Accept();
+                Player1 = _listener.Accept();
                 Console.WriteLine("Player 1: connected.");
-                Player2 = listener.Accept();
+                Player2 = _listener.Accept();
                 Console.WriteLine("Player 2: connected.");
             }
 

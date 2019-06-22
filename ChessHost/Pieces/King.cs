@@ -11,14 +11,15 @@ namespace ChessHost.Pieces
     public class King : ChessPiece
     {
         [DataMember]
-        public Tuple<bool, bool> Castling = new Tuple<bool, bool>(true, true);
+        public Tuple<Rook, Rook> Castling;
 
-        public King(Tuple<int, int> position, Player player)
+        public King(Tuple<int, int> position, Player player, Rook rook1, Rook rook2)
             : base(position, player, ChessPieceType.King)
         {
+            Castling = new Tuple<Rook, Rook>(rook1, rook2);
         }
 
-        protected override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
+        public override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
         {
             Tuple<int, int> currentPosition = GetPosition();
             List<Tuple<int, int>> allMoves = new List<Tuple<int, int>>();
@@ -30,16 +31,31 @@ namespace ChessHost.Pieces
                     if (i == 0 && j == 0 || // ignore kings current position
                         currentPosition.Item1 + i > 7 || currentPosition.Item1 + i < 0 || // ignore y out of bounds
                         currentPosition.Item2 + j > 7 || currentPosition.Item2 + j < 0) // ignore x out of bounds
-                        continue; 
+                        continue;
 
-                    else AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 + i, currentPosition.Item2 + j), ref cb,
-                        ref allMoves);
+                    else
+                        AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1 + i, currentPosition.Item2 + j),
+                            ref cb,
+                            ref allMoves);
                 }
             }
 
-
-
-            //TODO: castling
+            // Castling
+            if (Castling.Item2.CanCastle &&
+                cb.GetPieceInPosition(new Tuple<int, int>(currentPosition.Item1 + 1, currentPosition.Item2)) == null)
+                //// K _ _ R => _ R K _
+                // manually checking K+1, K+2 will be checked by AddMoveIfAvailable
+                // Castling.Item2 has information on castled rook/king being moved in the past
+                AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1, currentPosition.Item2 + 2), ref cb,
+                    ref allMoves);
+            if (Castling.Item1.CanCastle &&
+                cb.GetPieceInPosition(new Tuple<int, int>(currentPosition.Item1 - 1, currentPosition.Item2)) == null &&
+                cb.GetPieceInPosition(new Tuple<int, int>(currentPosition.Item1 - 3, currentPosition.Item2)) == null)
+                //// R _ _ _ K => _ _ K R _
+                // manually checking K+1, K+2 will be checked by AddMoveIfAvailable
+                // Castling.Item2 has information on castled rook/king being moved in the past
+                AddMoveIfAvailable(new Tuple<int, int>(currentPosition.Item1, currentPosition.Item2 - 2), ref cb,
+                    ref allMoves);
 
             return allMoves;
         }

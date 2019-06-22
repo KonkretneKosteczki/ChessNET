@@ -11,6 +11,16 @@ namespace MinMaxClient
 
     class Program
     {
+
+        //            List<Tuple<ChessPiece, List<Tuple<int, int>>>> moves = cb.GetAllPossibleMoves();
+        //            foreach (var move in moves)
+        //            {
+        //                Console.WriteLine("{0},{1}",
+        //                    move.Item1.GetPosition().Item1, move.Item1.GetPosition().Item2);
+        //                foreach (var m in move.Item2)
+        //                    Console.Write("{0},{1}; ",m.Item1, m.Item2);
+        //                Console.WriteLine("\n");
+        //            }
         private readonly Dictionary<ChessPieceType, int> _pieceValues = new Dictionary<ChessPieceType, int>
         {
             //The following table is the most common assignment of point values
