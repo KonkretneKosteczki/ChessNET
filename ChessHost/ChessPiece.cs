@@ -2,14 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using ChessHost.Pieces;
 
 namespace ChessHost
 {
+    [DataContract]
     public enum Player
     {
+        [EnumMember]
         Black,
+        [EnumMember]
         White
     }
 
@@ -23,35 +28,27 @@ namespace ChessHost
         Pawn
     }
 
-
+    [DataContract]
+    [KnownType(typeof(Pawn))]
+    [KnownType(typeof(Rook))]
+    [KnownType(typeof(King))]
+    [KnownType(typeof(Queen))]
+    [KnownType(typeof(Bishop))]
+    [KnownType(typeof(Knight))]
     public abstract class ChessPiece
     {
-        private readonly Dictionary<ChessPieceType, int> _pieceValues = new Dictionary<ChessPieceType, int>
-        {
-            //The following table is the most common assignment of point values
-            //(Capablanca & de Firmian 2006:24–25), (Seirawan & Silman 1990:40),
-            //(Soltis 2004:6), (Silman 1998:340), (Polgar & Truong 2005:11).
-            [ChessPieceType.King] = 1000,
-            [ChessPieceType.Queen] = 9,
-            [ChessPieceType.Rook] = 5,
-            [ChessPieceType.Bishop] = 3,
-            [ChessPieceType.Knight] = 3,
-            [ChessPieceType.Pawn] = 1,
-        };
-
         protected ChessPiece(Tuple<int, int> position, Player player, ChessPieceType type)
         {
             _position = position;
             _player = player;
             _type = type;
-            _value = _pieceValues[type];
         }
 
-        // Item1 of the tuple is Y direction, Item2 is X direction
-        private Tuple<int, int> _position;
-        private int _value; // for min-max ai algorithm
-
+        [DataMember]
+        private Tuple<int, int> _position; // Item1 of the tuple is Y direction, Item2 is X direction
+        [DataMember]
         private readonly Player _player;
+        [DataMember]
         private readonly ChessPieceType _type;
 
         private bool ValidateMove(Tuple<int, int> whereTo, ChessBoard cb)
@@ -102,11 +99,5 @@ namespace ChessHost
             if (piece.GetPlayer() != GetPlayer()) allMoves.Add(pos); // add position if capturing move
             return true; // stop adding pieces as bishop cant jump over other pieces
         }
-
     }
-
-
-    
-
-    
 }

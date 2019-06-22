@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ChessHost.Pieces
 {
+    [DataContract]
     public class Knight : ChessPiece
     {
         public Knight(Tuple<int, int> position, Player player)

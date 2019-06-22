@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
 using ChessHost.Pieces;
 
 namespace ChessHost
 {
+    [DataContract]
     public class ChessBoard
     {
-        private Player _CurrentPlayer = Player.White;
+        [DataMember]
+        private Player _currentPlayer = Player.White;
 
+        [DataMember]
         public Dictionary<Tuple<int, int>, ChessPiece> Pieces = new Dictionary<Tuple<int, int>, ChessPiece>();
 
         public ChessBoard()
@@ -37,6 +42,7 @@ namespace ChessHost
             Pieces.Add(new Tuple<int, int>(0, 7), new Rook(new Tuple<int, int>(0, 7), Player.Black));
         }
 
+        [DataMember]
         private readonly Dictionary<char, int> _positionCodes = new Dictionary<char, int>
         {
             ['A'] = 0,
@@ -48,6 +54,7 @@ namespace ChessHost
             ['G'] = 6,
             ['H'] = 7,
         };
+        [DataMember]
         private readonly List<char> _positionValues = new List<char>{'A', 'B', 'C', 'D', 'E', 'F', 'G','H'};
 
         public string TransformPosition(Tuple<int, int> pos)
@@ -68,23 +75,27 @@ namespace ChessHost
             return new Tuple<int, int>(y, x);
         }
 
-        public void MovePiece(string move)
+        public bool MovePiece(string move)
         {
-            var positions = move.Split(' ');
-            if (positions.Length == 2 && positions[0].Length == 2 && positions[1].Length == 2)
-            {
-                Tuple<int, int> pStart = TransformPosition(positions[0]);
-                Tuple<int, int> pEnd = TransformPosition(positions[1]);
+            Regex rx = new Regex(@"[A-H][1-8]");
+            MatchCollection positions = rx.Matches(move);
 
-                MovePiece(pStart, pEnd);
+            if (positions.Count == 2)
+            {
+                Tuple<int, int> pStart = TransformPosition(positions[0].Value);
+                Tuple<int, int> pEnd = TransformPosition(positions[1].Value);
+
+                return MovePiece(pStart, pEnd);
             }
+
+            return false;
         }
 
-        public void MovePiece(Tuple<int, int> pStart, Tuple<int, int> pEnd)
+        public bool MovePiece(Tuple<int, int> pStart, Tuple<int, int> pEnd)
         {
             if (Pieces.TryGetValue(pStart, out ChessPiece piece)) // check if piece even exists
             {
-                if (piece.GetPlayer() == _CurrentPlayer) // compare the piece with player
+                if (piece.GetPlayer() == _currentPlayer) // compare the piece with player
                 {
                     // TODO: add check if check
                     if (piece.MovePiece(pEnd, this)) // validates move, updates piece parameters if possible
@@ -94,10 +105,12 @@ namespace ChessHost
 
                         Pieces[pEnd] = Pieces[pStart];
                         Pieces.Remove(pStart);
-                        _CurrentPlayer = (_CurrentPlayer == Player.White) ? Player.Black : Player.White;
+                        _currentPlayer = (_currentPlayer == Player.White) ? Player.Black : Player.White;
+                        return true;
                     }
                 }
             }
+            return false;
         }
 
         public ChessPiece GetPieceInPosition(Tuple<int, int> pos)
@@ -141,6 +154,7 @@ namespace ChessHost
 
         public void PrintBoard(Player player = Player.White)
         {
+            Console.Clear();
             bool playerIsWhite = (player == Player.White);
 
             if (playerIsWhite)
@@ -172,5 +186,7 @@ namespace ChessHost
 
             Console.WriteLine("  -----------------------------------------");
         }
+
+        
     }
 }

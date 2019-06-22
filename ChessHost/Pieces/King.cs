@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ChessHost.Pieces
 {
+    [DataContract]
     public class King : ChessPiece
     {
+        [DataMember]
         public Tuple<bool, bool> Castling = new Tuple<bool, bool>(true, true);
 
         public King(Tuple<int, int> position, Player player)
