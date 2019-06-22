@@ -16,7 +16,7 @@ namespace ChessHost
             while (true)
             {
 //                Console.Clear();
-                cb.PrintBoard();
+                cb.PrintBoard(Player.Black);
                 cb.MovePiece(Console.ReadLine());
             }
         }

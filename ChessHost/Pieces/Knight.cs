@@ -13,14 +13,6 @@ namespace ChessHost.Pieces
         {
         }
 
-        private void AddMoveIfAvailable(Tuple<int, int> pos, ref ChessBoard cb, ref List<Tuple<int, int>> allMoves)
-        {
-            ChessPiece piece = cb.GetPieceInPosition(pos);
-
-            if (ValidatePosition(pos) && (piece == null || piece.GetPlayer()!=GetPlayer()))
-                allMoves.Add(pos);
-        }
-
         protected override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
         {
             Tuple<int, int> currentPosition = GetPosition();

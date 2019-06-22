@@ -106,32 +106,7 @@ namespace ChessHost
     }
 
 
-    public class Queen : ChessPiece
-    {
-        public Queen(Tuple<int, int> position, Player player)
-            : base(position, player, ChessPieceType.Queen)
-        {
-        }
-
-        protected override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     
-    public class King : ChessPiece
-    {
-        public King(Tuple<int, int> position, Player player)
-            : base(position, player, ChessPieceType.King)
-        {
-        }
-
-        protected override List<Tuple<int, int>> GetPossibleMoves(ChessBoard cb)
-        {
-            throw new NotImplementedException();
-        }
-    }
 
     
 }
