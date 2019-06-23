@@ -12,15 +12,35 @@ namespace ChessClient
     using System.Net.Sockets;
     using System.Text;
 
-    class Client
+    public class Client
     {
+        protected Player _player;
+        protected ChessBoard _chessBoard;
+
+        public delegate string MoveSource();
+
+        private MoveSource _moveSource;
+
+        public Player Player
+        {
+            get => _player;
+            set => _player = value;
+        }
+
+        public ChessBoard ChessBoard
+        {
+            get => _chessBoard;
+            set => _chessBoard = value;
+        }
+
         private Socket _sender;
 
-        public Client(string host, int port)
+        public Client(string host, int port, MoveSource move)
         {
             IPHostEntry ipHost = Dns.GetHostEntry(host);
             IPAddress ipAddr = ipHost.AddressList[0];
             IPEndPoint localEndPoint = new IPEndPoint(ipAddr, port);
+            _moveSource = move;
 
             try
             {
@@ -28,11 +48,22 @@ namespace ChessClient
                 _sender.Connect(localEndPoint);
 
                 Console.WriteLine("Socket connected to Chess Server");
+
+                ReceiveBoardState();
+                SendRequest("Received Board<EOF>");
+
+                ReceivePlayer();
+                SendRequest("Received Player<EOF>");
             }
             catch (SocketException se)
             {
                 Console.WriteLine("SocketException : {0}", se.ToString());
             }
+        }
+
+        public void PrintBoard()
+        {
+            _chessBoard.PrintBoard(_player);
         }
 
         public string ReceiveResponse()
@@ -59,15 +90,38 @@ namespace ChessClient
             int byteSent = _sender.Send(messageSent);
         }
 
-        public ChessBoard ReceiveBoardState()
+        public void ReceiveBoardState()
         {
             Serializator ser = new Serializator();
-            return ser.ReadToObject(ReceiveResponse());
+            ChessBoard = ser.ReadToObject(ReceiveResponse());
         }
 
-        public Player ReceivePlayer()
+
+        public void GameLoop(bool printLogs=false)
         {
-            return (Player) System.Enum.Parse(typeof(Player), ReceiveResponse());
+            if (Player == Player.Black) // waiting for additional response with white's move before starting game loop
+            {
+                ReceiveBoardState();
+                if (printLogs) PrintBoard();
+            }
+
+            while (true)
+            {
+                string move = _moveSource();
+                if (ChessBoard.MovePiece(move)) // try to make a move on local copy of the board for client side move validation
+                {
+                    SendRequest(move); // send move over to server only if valid move
+                    if (printLogs) PrintBoard(); // print board with your changes
+                    ReceiveBoardState(); // get other players changes
+                    if (printLogs) PrintBoard(); // print board with other players changes
+                }
+                else Console.WriteLine("Invalid Move");
+            }
+        }
+
+        private void ReceivePlayer()
+        {
+            Player = (Player) System.Enum.Parse(typeof(Player), ReceiveResponse());
         }
     }
 
@@ -75,34 +129,9 @@ namespace ChessClient
     {
         static void Main(string[] args)
         {
-            Client client = new Client("localhost", 3000);
-            ChessBoard chessBoard = client.ReceiveBoardState();
-            client.SendRequest("Received Board<EOF>");
-
-            Player player = client.ReceivePlayer();
-            client.SendRequest("Received Player<EOF>");
-
-            chessBoard.PrintBoard(player);
-            Console.WriteLine("Playing as: {0}", player);
-
-            if (player == Player.Black) // waiting for additional response with white's move before starting game loop
-            {
-                chessBoard = client.ReceiveBoardState();
-                chessBoard.PrintBoard(player);
-            }
-
-            while (true)
-            {
-                string move = Console.ReadLine();
-                if (chessBoard.MovePiece(move)) // try to make a move on local copy of the board for client side move validation
-                {
-                    client.SendRequest(move); // send move over to server only if valid move
-                    chessBoard.PrintBoard(player); // print board with your changes
-                    chessBoard = client.ReceiveBoardState(); // get other players changes
-                    chessBoard.PrintBoard(player); // print board with other players changes
-                }
-                else Console.WriteLine("Invalid Move");
-            }
+            Client client = new Client("localhost", 3000, ()=> Console.ReadLine());
+            client.PrintBoard();
+            client.GameLoop();
         }
     }
 }

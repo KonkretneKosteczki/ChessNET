@@ -49,6 +49,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ChessClient\ChessClient.csproj">
+      <Project>{683946bd-1cf2-4f0f-957e-a2f407acb71a}</Project>
+      <Name>ChessClient</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ChessHost\ChessHost.csproj">
       <Project>{d363e0b1-4328-4720-a418-337b9374f6c5}</Project>
       <Name>ChessHost</Name>

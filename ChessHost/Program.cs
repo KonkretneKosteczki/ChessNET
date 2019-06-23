@@ -30,28 +30,18 @@ namespace ChessHost
         {
             ChessBoard cb = new ChessBoard();
             cb.PrintBoard();
-            bool debug = true;
+            bool debug = false;
             while (debug)
             {
                 if (cb.MovePiece(Console.ReadLine()))
                     cb.PrintBoard();
             }
 
-            //            List<Tuple<ChessPiece, List<Tuple<int, int>>>> moves = cb.GetAllPossibleMoves();
-            //            foreach (var move in moves)
-            //            {
-            //                Console.WriteLine("{0},{1}",
-            //                    move.Item1.Position().Item1, move.Item1.Position().Item2);
-            //                foreach (var m in move.Item2)
-            //                    Console.Write("{0},{1}; ",m.Item1, m.Item2);
-            //                Console.WriteLine("\n");
-            //            }
-
             Serializator ser = new Serializator();
             string BoardState = ser.WriteFromObject(cb);
 
             Server server = new Server("localhost", 3000);
-//            DecideStartingPlayer(ref server);
+            DecideStartingPlayer(ref server);
 
             server.sendResponse(server.Player1, BoardState + "<EOF>");
             server.ReceiveRequest(server.Player1); // wait for response confirming received data
