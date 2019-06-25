@@ -1,80 +1,70 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using ChessHost.Pieces;
 
 namespace ChessHost
 {
-    class Program
+    internal class Program
     {
-        static void DecideStartingPlayer(Server server)
+        private static void DecideStartingPlayer(Server server)
         {
             // random 0/1 deciding which players starts the game
             // if 1 starting player is the one that first connected to the server Player1
             // if 0 starting player is the second one (achieved by swapping values of server instance)
-            if (new Random().Next(0, 2) == 0)
-            {
-                var temp = server.Player1;
-                server.Player1 = server.Player2;
-                server.Player2 = temp;
-            }
+            if (new Random().Next(0, 2) != 0) return;
+
+            Socket temp = server.Player1;
+            server.Player1 = server.Player2;
+            server.Player2 = temp;
         }
 
-        static void Main(string[] args)
+        private static void Main()
         {
-
             ChessBoard cb = new ChessBoard();
             cb.PrintBoard();
-//            Console.WriteLine(cb.TransformPosition(new Tuple<int, int>(0,4)));
-//            Console.WriteLine(cb.GetPieceInPosition(new Tuple<int, int>(0, 4)).GetType());
-            bool debug = false;
-            while (debug)
-            {
-                if (cb.MovePiece(Console.ReadLine()))
-                    cb.PrintBoard();
-            }
+
+//            while (true)
+//            {
+//                cb.PrintBoard();
+//                cb.MovePiece(Console.ReadLine());
+//            }
 
             Serializator ser = new Serializator();
-            string BoardState = ser.WriteFromObject(cb);
-
+            string boardState = ser.WriteFromObject(cb);
             Server server = new Server("localhost", 3000);
-            DecideStartingPlayer(server);
-
-            server.sendResponse(server.Player1, BoardState + "<EOF>");
-            server.ReceiveRequest(server.Player1); // wait for response confirming received data
-            server.sendResponse(server.Player1, Player.White.ToString() + "<EOF>");
-            server.ReceiveRequest(server.Player1);
-
-            server.sendResponse(server.Player2, BoardState + "<EOF>");
-            server.ReceiveRequest(server.Player2);
-            server.sendResponse(server.Player2, Player.Black.ToString() + "<EOF>");
-            server.ReceiveRequest(server.Player2);
-
-            while (true)
+            try
             {
-                try
+                DecideStartingPlayer(server);
+
+                server.SendResponse(server.Player1, boardState + "<EOF>");
+                server.ReceiveRequest(server.Player1); // wait for response confirming received data
+                server.SendResponse(server.Player1, Player.White.ToString() + "<EOF>");
+                server.ReceiveRequest(server.Player1);
+
+                server.SendResponse(server.Player2, boardState + "<EOF>");
+                server.ReceiveRequest(server.Player2);
+                server.SendResponse(server.Player2, Player.Black.ToString() + "<EOF>");
+                server.ReceiveRequest(server.Player2);
+                while (true)
                 {
                     string dataFromClient1 = server.ReceiveRequest(server.Player1);
                     Console.WriteLine("RECEIVED: {0} from WHITE", dataFromClient1);
                     cb.MovePiece(dataFromClient1);
-                    server.sendResponse(server.Player2, ser.WriteFromObject(cb));
+                    server.SendResponse(server.Player2, ser.WriteFromObject(cb));
 
                     string dataFromClient2 = server.ReceiveRequest(server.Player2);
                     Console.WriteLine("RECEIVED {0} from BLACK", dataFromClient2);
                     cb.MovePiece(dataFromClient2);
-                    server.sendResponse(server.Player1, ser.WriteFromObject(cb));
+                    server.SendResponse(server.Player1, ser.WriteFromObject(cb));
                 }
-                catch (SocketException e)
-                {
-                    // connection closed by client
-                    // TODO: send message about winning by walk over to other client
-                }
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine("Socket was forcefully closed." + e.Message);
+                server.Player1.Close();
+                server.Player2.Close();
             }
         }
     }
@@ -84,11 +74,11 @@ namespace ChessHost
         public Socket Player1;
         public Socket Player2;
 
-        private Socket _listener;
+        private readonly Socket _listener;
 
         public string ReceiveRequest(Socket clientSocket)
         {
-            byte[] messageReceived = new byte[8192];
+            byte[] messageReceived = new byte[256];
 
             string msg = null;
             while (true)
@@ -102,7 +92,7 @@ namespace ChessHost
             return msg.Substring(0, msg.LastIndexOf("<EOF>", StringComparison.Ordinal));
         }
 
-        public void sendResponse(Socket clientSocket, string msg)
+        public void SendResponse(Socket clientSocket, string msg)
         {
             if (!msg.EndsWith("<EOF>")) msg += "<EOF>";
             byte[] message = Encoding.ASCII.GetBytes(msg);
@@ -129,9 +119,10 @@ namespace ChessHost
                 Console.WriteLine("Player 2: connected.");
             }
 
-            catch (Exception e)
+            catch (SocketException e)
             {
                 Console.WriteLine(e.ToString());
+                SocketShutDown(_listener);
             }
         }
 

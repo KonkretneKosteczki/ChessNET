@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
-using ChessHost.Pieces;
 
-namespace ChessHost
+namespace ChessHost.Pieces
 {
     [DataContract]
     public enum Player
@@ -97,7 +92,7 @@ namespace ChessHost
             return canMove;
         }
 
-        protected bool AddMoveIfAvailable(Tuple<int, int> pos, ref ChessBoard cb, ref List<Tuple<int, int>> allMoves)
+        protected bool AddMoveIfAvailable(Tuple<int, int> pos, ChessBoard cb, ref List<Tuple<int, int>> allMoves)
         {
             ChessPiece piece = cb.GetPieceInPosition(pos);
 

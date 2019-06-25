@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ChessHost;
+using ChessHost.Pieces;
 
 namespace ChessClient
 {
@@ -14,26 +10,15 @@ namespace ChessClient
 
     public class Client
     {
-        protected Player _player;
-        protected ChessBoard _chessBoard;
 
         public delegate string MoveSource(ChessBoard cb);
 
-        private MoveSource _moveSource;
+        private readonly MoveSource _moveSource;
 
-        public Player Player
-        {
-            get => _player;
-            set => _player = value;
-        }
+        public Player Player;
+        public ChessBoard ChessBoard;
 
-        public ChessBoard ChessBoard
-        {
-            get => _chessBoard;
-            set => _chessBoard = value;
-        }
-
-        private Socket _sender;
+        private readonly Socket _sender;
 
         public Client(string host, int port, MoveSource move)
         {
@@ -57,18 +42,19 @@ namespace ChessClient
             }
             catch (SocketException se)
             {
-                Console.WriteLine("SocketException : {0}", se.ToString());
+                Console.WriteLine("SocketException : {0}", se);
+                _sender.Close();
             }
         }
 
         public void PrintBoard()
         {
-            ChessBoard.PrintBoard(_player);
+            ChessBoard.PrintBoard(Player);
         }
 
         public string ReceiveResponse()
         {
-            byte[] messageReceived = new byte[8192];
+            byte[] messageReceived = new byte[256];
 
             string msg = null;
             while (true)
@@ -87,7 +73,7 @@ namespace ChessClient
         {
             if (!msg.EndsWith("<EOF>")) msg += "<EOF>";
             byte[] messageSent = Encoding.ASCII.GetBytes(msg);
-            int byteSent = _sender.Send(messageSent);
+            _sender.Send(messageSent);
         }
 
         public void ReceiveBoardState()
@@ -121,15 +107,15 @@ namespace ChessClient
 
         private void ReceivePlayer()
         {
-            Player = (Player) System.Enum.Parse(typeof(Player), ReceiveResponse());
+            Player = (Player) Enum.Parse(typeof(Player), ReceiveResponse());
         }
     }
 
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
-            Client client = new Client("localhost", 3000, ((cb) => Console.ReadLine()));
+            Client client = new Client("localhost", 3000, (cb) => Console.ReadLine());
             client.PrintBoard();
             client.GameLoop(true);
         }

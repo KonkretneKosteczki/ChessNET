@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Text;
+using ChessHost.Pieces;
 
 namespace ChessHost
 {
@@ -20,21 +19,19 @@ namespace ChessHost
 
         public ChessBoard ReadToObject(string json)
         {
-            ChessBoard deserializedChessBoard = null;
             MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
             DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(ChessBoard));
-            deserializedChessBoard = ser.ReadObject(ms) as ChessBoard;
+            var deserializedChessBoard = ser.ReadObject(ms) as ChessBoard;
             ms.Close();
             return deserializedChessBoard;
         }
         public ChessPiece ReadPieceToObject(string json)
         {
-            ChessPiece deserlializedChessPiece = null;
             MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(json));
             DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(ChessPiece));
-            deserlializedChessPiece = ser.ReadObject(ms) as ChessPiece;
+            var deserializedChessPiece = ser.ReadObject(ms) as ChessPiece;
             ms.Close();
-            return deserlializedChessPiece;
+            return deserializedChessPiece;
         }
 
         public string WriteFromObject(ChessBoard chessBoard)

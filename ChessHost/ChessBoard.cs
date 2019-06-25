@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using ChessHost.Pieces;
@@ -83,20 +82,18 @@ namespace ChessHost
 
         public Tuple<int, int> TransformPosition(string pos)
         {
-            int x, y;
-            if (int.TryParse(pos[1].ToString(), out y))
-                x = _positionCodes[pos[0]];
-            else if (int.TryParse(pos[0].ToString(), out y))
-                x = _positionCodes[pos[1]];
+            int positionX;
+            if (int.TryParse(pos[1].ToString(), out int positionY))
+                positionX = _positionCodes[pos[0]];
             else return null;
 
-            y = 8 - y;
-            return new Tuple<int, int>(y, x);
+            positionY = 8 - positionY;
+            return new Tuple<int, int>(positionY, positionX);
         }
 
         public string TransformPosition(Tuple<int, int> pos)
         {
-            return _positionValues[pos.Item2] + (8-pos.Item1).ToString();
+            return _positionValues[pos.Item2] + (8 - pos.Item1).ToString();
         }
 
 
@@ -110,8 +107,6 @@ namespace ChessHost
                 Tuple<int, int> pStart = TransformPosition(positions[0].Value);
                 Tuple<int, int> pEnd = TransformPosition(positions[1].Value);
 
-//                Console.WriteLine("{0},{1}", pStart, pEnd);
-
                 return MovePiece(pStart, pEnd);
             }
 
@@ -120,7 +115,7 @@ namespace ChessHost
 
         public bool MovePiece(Tuple<int, int> pStart, Tuple<int, int> pEnd, bool validateKingExposure = true)
         {
-            if (Pieces.TryGetValue(pStart, out ChessPiece piece)) // check if piece even exists
+            if (pStart != null && Pieces.TryGetValue(pStart, out ChessPiece piece)) // check if piece even exists
             {
                 if (piece.GetPlayer() == _currentPlayer) // compare the piece with player
                 {
@@ -157,30 +152,32 @@ namespace ChessHost
 
                         // PAWN PROMOTION
                         if (piece.GetType() == typeof(Pawn) && (pEnd.Item1 == 7 || pEnd.Item1 == 0))
-                            Pieces[pEnd]=new Queen(pEnd, piece.GetPlayer());
+                            Pieces[pEnd] = new Queen(pEnd, piece.GetPlayer());
 
                         // CASTLING
-                        if (piece.GetType() == typeof(Rook))
+                        if (piece.GetPieceType() == ChessPieceType.Rook)
                         {
                             // try to get king and update its castling
                             // no need for action if king not in default position (moved before)
                             Rook rook = (Rook) piece;
                             if (rook.CanCastle)
                             {
-                                King king = (King) GetPieceInPosition(new Tuple<int, int>(pStart.Item1, 4));
-                                if (king != null)
+                                ChessPiece originalKingPos = GetPieceInPosition(new Tuple<int, int>(pStart.Item1, 4));
+                                if (originalKingPos != null && originalKingPos.GetPieceType() == ChessPieceType.King)
                                 {
+                                    King king = (King) originalKingPos;
+
                                     // can use rook's starting position to define if its left or right because
                                     // if it moved in the past (ex. right rook moved to leftmost space)
                                     // still rook.CanCastle == false so would not even enter here
-                                    if (pStart.Item2 == 0) // left rook
-                                        king.Castling = new Tuple<bool, bool>(false, king.Castling.Item2);
-                                    else // right rook
-                                        king.Castling = new Tuple<bool, bool>(king.Castling.Item1, false);
+                                    king.Castling = (pStart.Item2 == 0)
+                                        ? new Tuple<bool, bool>(false, king.Castling.Item2)
+                                        : new Tuple<bool, bool>(king.Castling.Item1, false);
                                     rook.CanCastle = false;
                                 }
                             }
                         }
+
                         if (piece.GetType() == typeof(King))
                         {
                             ((King) piece).Castling = new Tuple<bool, bool>(false, false);

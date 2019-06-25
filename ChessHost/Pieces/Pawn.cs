@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ChessHost.Pieces
 {
@@ -45,8 +42,8 @@ namespace ChessHost.Pieces
 
             foreach (Tuple<int, int> move in captureMoves)
             {
-                ChessPiece CapturedPiece = cb.GetPieceInPosition(move);
-                if (CapturedPiece != null && CapturedPiece.GetPlayer() != GetPlayer())
+                ChessPiece capturedPiece = cb.GetPieceInPosition(move);
+                if (capturedPiece != null && capturedPiece.GetPlayer() != GetPlayer())
                     allMoves.Add(move);
             }
 
