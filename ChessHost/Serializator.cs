@@ -8,6 +8,16 @@ namespace ChessHost
 {
     public class Serializator
     {
+        public ChessBoard DeepCopy(ChessBoard cb)
+        {
+            return ReadToObject(WriteFromObject(cb));
+        }
+        public ChessPiece DeepCopy(ChessPiece cp)
+        {
+            return ReadPieceToObject(WriteFromObject(cp));
+        }
+
+
         public ChessBoard ReadToObject(string json)
         {
             ChessBoard deserializedChessBoard = null;

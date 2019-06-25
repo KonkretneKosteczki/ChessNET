@@ -15,7 +15,7 @@ namespace ChessHost.Pieces
         {
         }
 
-        private void addValidatedMove(Tuple<int,int> move, ref ChessBoard cb, ref List<Tuple<int,int>> allMoves)
+        private void addValidatedMove(Tuple<int, int> move, ref ChessBoard cb, ref List<Tuple<int, int>> allMoves)
         {
             if (ValidatePosition(move)) AddMoveIfAvailable(move, ref cb, ref allMoves);
         }
@@ -41,7 +41,7 @@ namespace ChessHost.Pieces
                 ref allMoves);
             addValidatedMove(new Tuple<int, int>(currentPosition.Item1 - 2, currentPosition.Item2 - 1), ref cb,
                 ref allMoves);
-            
+
             return allMoves;
         }
     }

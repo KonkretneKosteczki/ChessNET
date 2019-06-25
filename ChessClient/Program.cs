@@ -17,7 +17,7 @@ namespace ChessClient
         protected Player _player;
         protected ChessBoard _chessBoard;
 
-        public delegate string MoveSource();
+        public delegate string MoveSource(ChessBoard cb);
 
         private MoveSource _moveSource;
 
@@ -63,7 +63,7 @@ namespace ChessClient
 
         public void PrintBoard()
         {
-            _chessBoard.PrintBoard(_player);
+            ChessBoard.PrintBoard(_player);
         }
 
         public string ReceiveResponse()
@@ -107,7 +107,7 @@ namespace ChessClient
 
             while (true)
             {
-                string move = _moveSource();
+                string move = _moveSource(ChessBoard);
                 if (ChessBoard.MovePiece(move)) // try to make a move on local copy of the board for client side move validation
                 {
                     SendRequest(move); // send move over to server only if valid move
@@ -129,9 +129,9 @@ namespace ChessClient
     {
         static void Main(string[] args)
         {
-            Client client = new Client("localhost", 3000, ()=> Console.ReadLine());
+            Client client = new Client("localhost", 3000, ((cb) => Console.ReadLine()));
             client.PrintBoard();
-            client.GameLoop();
+            client.GameLoop(true);
         }
     }
 }

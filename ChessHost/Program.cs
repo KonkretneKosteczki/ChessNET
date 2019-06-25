@@ -13,7 +13,7 @@ namespace ChessHost
 {
     class Program
     {
-        static void DecideStartingPlayer(ref Server server)
+        static void DecideStartingPlayer(Server server)
         {
             // random 0/1 deciding which players starts the game
             // if 1 starting player is the one that first connected to the server Player1
@@ -28,8 +28,11 @@ namespace ChessHost
 
         static void Main(string[] args)
         {
+
             ChessBoard cb = new ChessBoard();
             cb.PrintBoard();
+//            Console.WriteLine(cb.TransformPosition(new Tuple<int, int>(0,4)));
+//            Console.WriteLine(cb.GetPieceInPosition(new Tuple<int, int>(0, 4)).GetType());
             bool debug = false;
             while (debug)
             {
@@ -41,7 +44,7 @@ namespace ChessHost
             string BoardState = ser.WriteFromObject(cb);
 
             Server server = new Server("localhost", 3000);
-            DecideStartingPlayer(ref server);
+            DecideStartingPlayer(server);
 
             server.sendResponse(server.Player1, BoardState + "<EOF>");
             server.ReceiveRequest(server.Player1); // wait for response confirming received data

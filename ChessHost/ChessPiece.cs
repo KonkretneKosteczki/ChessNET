@@ -39,11 +39,14 @@ namespace ChessHost
     {
         protected ChessPiece(Tuple<int, int> position, Player player, ChessPieceType type)
         {
+            _startingPosition = position;
             _position = position;
             _player = player;
             _type = type;
         }
 
+        [DataMember]
+        private Tuple<int, int> _startingPosition;
         [DataMember]
         private Tuple<int, int> _position; // Item1 of the tuple is Y direction, Item2 is X direction
         [DataMember]
@@ -69,6 +72,12 @@ namespace ChessHost
         {
             get => _position;
             set => _position = value;
+        }
+
+        public Tuple<int, int> StartingPosition
+        {
+            get => _startingPosition;
+            set => _startingPosition = value;
         }
 
         public ChessPieceType GetPieceType()

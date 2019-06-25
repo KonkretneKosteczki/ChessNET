@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using ChessHost.Pieces;
@@ -14,19 +15,28 @@ namespace ChessHost
         [DataMember]
         public Dictionary<Tuple<int, int>, ChessPiece> Pieces = new Dictionary<Tuple<int, int>, ChessPiece>();
 
-        public List<Tuple<ChessPiece, List<Tuple<int, int>>>> GetAllPossibleMoves()
+        public List<Tuple<ChessPiece, Tuple<int, int>>> GetAllPossibleMoves()
         {
-            List<Tuple<ChessPiece, List<Tuple<int, int>>>> allMoves =
-                new List<Tuple<ChessPiece, List<Tuple<int, int>>>>();
+            List<Tuple<ChessPiece, Tuple<int, int>>> allMoves =
+                new List<Tuple<ChessPiece, Tuple<int, int>>>();
+
             foreach (KeyValuePair<Tuple<int, int>, ChessPiece> pieceObject in Pieces)
             {
-                allMoves.Add(new Tuple<ChessPiece, List<Tuple<int, int>>>(
-                    pieceObject.Value,
-                    pieceObject.Value.GetPossibleMoves(this)
-                ));
+                foreach (var possibleMove in pieceObject.Value.GetPossibleMoves(this))
+                {
+                    allMoves.Add(new Tuple<ChessPiece, Tuple<int, int>>(
+                        pieceObject.Value, possibleMove
+                    ));
+                }
             }
 
             return allMoves;
+        }
+
+        public Player CurrentPlayer
+        {
+            get => _currentPlayer;
+            set => _currentPlayer = value;
         }
 
         public ChessBoard()
@@ -84,6 +94,12 @@ namespace ChessHost
             return new Tuple<int, int>(y, x);
         }
 
+        public string TransformPosition(Tuple<int, int> pos)
+        {
+            return _positionValues[pos.Item2] + (8-pos.Item1).ToString();
+        }
+
+
         public bool MovePiece(string move)
         {
             Regex rx = new Regex(@"[A-H][1-8]");
@@ -94,13 +110,15 @@ namespace ChessHost
                 Tuple<int, int> pStart = TransformPosition(positions[0].Value);
                 Tuple<int, int> pEnd = TransformPosition(positions[1].Value);
 
+//                Console.WriteLine("{0},{1}", pStart, pEnd);
+
                 return MovePiece(pStart, pEnd);
             }
 
             return false;
         }
 
-        public bool MovePiece(Tuple<int, int> pStart, Tuple<int, int> pEnd, bool validateKingExposure=true)
+        public bool MovePiece(Tuple<int, int> pStart, Tuple<int, int> pEnd, bool validateKingExposure = true)
         {
             if (Pieces.TryGetValue(pStart, out ChessPiece piece)) // check if piece even exists
             {
@@ -111,30 +129,37 @@ namespace ChessHost
                         // create and perform operations on deep copy for validation purposes
 
                         Serializator ser = new Serializator();
-                        ChessPiece chessPieceCopy = ser.ReadPieceToObject(ser.WriteFromObject(piece));
-                        ChessBoard chessBoardCopy = ser.ReadToObject(ser.WriteFromObject(this));
+                        ChessPiece chessPieceCopy = ser.DeepCopy(piece);
+                        ChessBoard chessBoardCopy = ser.DeepCopy(this);
 
                         if (chessPieceCopy.MovePiece(pEnd, chessBoardCopy))
                         {
                             chessBoardCopy.Pieces[pEnd] = Pieces[pStart];
                             chessBoardCopy.Pieces.Remove(pStart);
+
                             foreach (var movablePiece in chessBoardCopy.GetAllPossibleMoves())
                                 if (movablePiece.Item1.GetPlayer() != _currentPlayer) //only enemy moves
-                                    foreach (var position in movablePiece.Item2) // moves of those pieces
-                                    {
-                                        ChessPiece cpInPosition = chessBoardCopy.GetPieceInPosition(position);
-                                        if (cpInPosition != null && cpInPosition.GetType() == typeof(King)) // if any piece would end on king ban the move
-                                            return false;
-                                    } 
+                                {
+                                    ChessPiece cpInPosition = chessBoardCopy.GetPieceInPosition(movablePiece.Item2);
+                                    if (cpInPosition != null && cpInPosition.GetType() == typeof(King))
+                                        // if any piece would end on king ban the move
+                                        return false;
+                                }
                         }
                         else return false;
                     }
+
                     if (piece.MovePiece(pEnd, this)) // validates move, updates piece parameters if possible
                     {
                         Pieces[pEnd] = Pieces[pStart];
                         Pieces.Remove(pStart);
                         _currentPlayer = (_currentPlayer == Player.White) ? Player.Black : Player.White;
 
+                        // PAWN PROMOTION
+                        if (piece.GetType() == typeof(Pawn) && (pEnd.Item1 == 7 || pEnd.Item1 == 0))
+                            Pieces[pEnd]=new Queen(pEnd, piece.GetPlayer());
+
+                        // CASTLING
                         if (piece.GetType() == typeof(Rook))
                         {
                             // try to get king and update its castling
@@ -142,7 +167,7 @@ namespace ChessHost
                             Rook rook = (Rook) piece;
                             if (rook.CanCastle)
                             {
-                                King king = (King)GetPieceInPosition(new Tuple<int, int>(pStart.Item1, 4));
+                                King king = (King) GetPieceInPosition(new Tuple<int, int>(pStart.Item1, 4));
                                 if (king != null)
                                 {
                                     // can use rook's starting position to define if its left or right because
@@ -158,7 +183,7 @@ namespace ChessHost
                         }
                         if (piece.GetType() == typeof(King))
                         {
-                            ((King) piece).Castling = new Tuple<bool, bool>(false,false);
+                            ((King) piece).Castling = new Tuple<bool, bool>(false, false);
                             // king moved by 2 spaces so castling
                             if (pStart.Item2 - pEnd.Item2 == -2) // move to the right
                             {
@@ -171,9 +196,9 @@ namespace ChessHost
                             }
                             else if (pStart.Item2 - pEnd.Item2 == 2)
                             {
-                                Tuple<int, int> rookStart= new Tuple<int, int>(pEnd.Item1, 0), 
+                                Tuple<int, int> rookStart = new Tuple<int, int>(pEnd.Item1, 0),
                                     rookEnd = new Tuple<int, int>(pEnd.Item1, 3);
-                                GetPieceInPosition(rookStart).Position=rookEnd;
+                                GetPieceInPosition(rookStart).Position = rookEnd;
 
                                 Pieces[rookEnd] = Pieces[rookStart];
                                 Pieces.Remove(rookStart);
