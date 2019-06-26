@@ -25,12 +25,6 @@ namespace ChessHost
             ChessBoard cb = new ChessBoard();
             cb.PrintBoard();
 
-//            while (true)
-//            {
-//                cb.PrintBoard();
-//                cb.MovePiece(Console.ReadLine());
-//            }
-
             Serializator ser = new Serializator();
             string boardState = ser.WriteFromObject(cb);
             Server server = new Server("localhost", 3000);
@@ -60,9 +54,18 @@ namespace ChessHost
                     server.SendResponse(server.Player1, ser.WriteFromObject(cb));
                 }
             }
-            catch (SocketException e)
+            catch (SocketException)
             {
-                Console.WriteLine("Socket was forcefully closed." + e.Message);
+                if (!server.SocketConnected(server.Player1))
+                {
+                    Console.WriteLine("Player WHITE forcefully closed connection.");
+                    server.SendResponse(server.Player2, "INFO: OPPONENT DISCONNECTED YOU WIN!");
+                }
+                if (!server.SocketConnected(server.Player2))
+                {
+                    Console.WriteLine("Player BLACK forcefully closed connection.");
+                    server.SendResponse(server.Player1, "INFO: OPPONENT DISCONNECTED YOU WIN!");
+                }
                 server.Player1.Close();
                 server.Player2.Close();
             }
@@ -73,6 +76,13 @@ namespace ChessHost
     {
         public Socket Player1;
         public Socket Player2;
+
+        public bool SocketConnected(Socket s)
+        {
+            bool part1 = s.Poll(1000, SelectMode.SelectRead);
+            bool part2 = (s.Available == 0);
+            return !part1 || !part2;
+        }
 
         private readonly Socket _listener;
 
@@ -94,6 +104,7 @@ namespace ChessHost
 
         public void SendResponse(Socket clientSocket, string msg)
         {
+            if (!SocketConnected(clientSocket)) return;
             if (!msg.EndsWith("<EOF>")) msg += "<EOF>";
             byte[] message = Encoding.ASCII.GetBytes(msg);
             clientSocket.Send(message);

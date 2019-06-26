@@ -10,7 +10,6 @@ namespace ChessClient
 
     public class Client
     {
-
         public delegate string MoveSource(ChessBoard cb);
 
         private readonly MoveSource _moveSource;
@@ -34,7 +33,8 @@ namespace ChessClient
 
                 Console.WriteLine("Socket connected to Chess Server");
 
-                ReceiveBoardState();
+
+                if (!ReceiveBoardState())return;
                 SendRequest("Received Board<EOF>");
 
                 ReceivePlayer();
@@ -65,8 +65,15 @@ namespace ChessClient
                     break;
             }
 
-//            Console.WriteLine("RECEIVED: {0}", msg);
-            return msg.Substring(0, msg.LastIndexOf("<EOF>", StringComparison.Ordinal));
+            msg = msg.Substring(0, msg.LastIndexOf("<EOF>", StringComparison.Ordinal));
+
+            if (msg.StartsWith("INFO:"))
+            {
+                Console.WriteLine(msg);
+                return null;
+            }
+
+            return msg;
         }
 
         public void SendRequest(string msg)
@@ -76,38 +83,55 @@ namespace ChessClient
             _sender.Send(messageSent);
         }
 
-        public void ReceiveBoardState()
+        public bool ReceiveBoardState()
         {
             Serializator ser = new Serializator();
-            ChessBoard = ser.ReadToObject(ReceiveResponse());
+            String response = ReceiveResponse();
+            if (response == null) return false;
+
+            ChessBoard = ser.ReadToObject(response);
+            return true;
         }
 
 
-        public void GameLoop(bool printLogs=false)
+        public void GameLoop(bool printLogs = false)
         {
-            if (Player == Player.Black) // waiting for additional response with white's move before starting game loop
+            try
             {
-                ReceiveBoardState();
-                if (printLogs) PrintBoard();
-            }
-
-            while (true)
-            {
-                string move = _moveSource(ChessBoard);
-                if (ChessBoard.MovePiece(move)) // try to make a move on local copy of the board for client side move validation
+                if (Player == Player.Black)
                 {
-                    SendRequest(move); // send move over to server only if valid move
-                    if (printLogs) PrintBoard(); // print board with your changes
-                    ReceiveBoardState(); // get other players changes
-                    if (printLogs) PrintBoard(); // print board with other players changes
+                    // waiting for additional response with white's move before starting game loop
+                    if (!ReceiveBoardState()) return;
+                    if (printLogs) PrintBoard();
                 }
-                else Console.WriteLine("Invalid Move");
+
+                while (true)
+                {
+                    string move = _moveSource(ChessBoard);
+                    if (ChessBoard.MovePiece(move))
+                    {
+                        // try to make a move on local copy of the board for client side move validation
+                        SendRequest(move); // send move over to server only if valid move
+                        if (printLogs) PrintBoard(); // print board with your changes
+                        if (!ReceiveBoardState()) return; // get other players changes
+                        if (printLogs) PrintBoard(); // print board with other players changes
+                    }
+                    else Console.WriteLine("Invalid Move");
+                }
+            }
+            catch (SocketException)
+            {
+                Console.WriteLine("Lost connection to the server");
+                _sender.Close();
+                Console.ReadLine();
             }
         }
 
         private void ReceivePlayer()
         {
-            Player = (Player) Enum.Parse(typeof(Player), ReceiveResponse());
+            string response = ReceiveResponse();
+            if (response!=null)
+            Player = (Player) Enum.Parse(typeof(Player), response);
         }
     }
 
@@ -118,6 +142,7 @@ namespace ChessClient
             Client client = new Client("localhost", 3000, (cb) => Console.ReadLine());
             client.PrintBoard();
             client.GameLoop(true);
+            Console.ReadLine();
         }
     }
 }

@@ -21,8 +21,6 @@ namespace ChessHost.Pieces
                 allMoves = new List<Tuple<int, int>>();
             bool isPlayerBlack = (GetPlayer() == Player.Black);
 
-            nonCaptureMoves.Add(new Tuple<int, int>(position.Item1 + (isPlayerBlack ? 1 : -1),
-                position.Item2)); // moveForward
             if (StartingPosition.Equals(position) &&
                 cb.GetPieceInPosition(new Tuple<int, int>(position.Item1 + (isPlayerBlack ? 1 : -1), position.Item2)) ==
                 null)
@@ -31,6 +29,9 @@ namespace ChessHost.Pieces
                     position.Item2)); // moveForwardDouble
             }
 
+            nonCaptureMoves.Add(new Tuple<int, int>(position.Item1 + (isPlayerBlack ? 1 : -1),
+                position.Item2)); // moveForward
+            
             captureMoves.Add(new Tuple<int, int>(position.Item1 + (isPlayerBlack ? 1 : -1),
                 position.Item2 + 1)); // moveCaptureRight
             captureMoves.Add(new Tuple<int, int>(position.Item1 + (isPlayerBlack ? 1 : -1),

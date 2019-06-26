@@ -16,7 +16,7 @@ namespace MinMaxClient
             //The following table is the most common assignment of point values
             //(Capablanca & de Firmian 2006:24–25), (Seirawan & Silman 1990:40),
             //(Soltis 2004:6), (Silman 1998:340), (Polgar & Truong 2005:11).
-            [ChessPieceType.King] = 1000,
+            [ChessPieceType.King] = 200,
             [ChessPieceType.Queen] = 9,
             [ChessPieceType.Rook] = 5,
             [ChessPieceType.Bishop] = 3,
@@ -24,18 +24,50 @@ namespace MinMaxClient
             [ChessPieceType.Pawn] = 1,
         };
 
-        private static int GetPieceScore(ChessPiece chessPiece, Player currentPlayer)
+        private static int GetPieceScore(ChessBoard chessBoard, ChessPiece chessPiece, Player currentPlayer)
         {
-            if (chessPiece.GetPlayer() == currentPlayer)
-                return PieceValues[chessPiece.GetPieceType()];
-            return -PieceValues[chessPiece.GetPieceType()];
+            bool isCurrent = chessPiece.GetPlayer() == currentPlayer;
+            double totalScore = 0;
+            int possibleMoves = chessPiece.GetPossibleMoves(chessBoard).Count;
+            totalScore += isCurrent ? possibleMoves * 0.1 : -possibleMoves * 0.1; // 0.1 per possible move
+//            if (chessPiece.GetPieceType() == ChessPieceType.Pawn)
+//            {
+//                if (possibleMoves == 0) totalScore -= isCurrent ? 0.5 : -0.5; // penalty for blocked pawn (blocked)
+//                var pieceUnder =
+//                    chessBoard.GetPieceInPosition(new Tuple<int, int>(chessPiece.Position.Item1 + 1,
+//                        chessPiece.Position.Item2));
+//                if (pieceUnder != null && pieceUnder.GetPieceType() == ChessPieceType.Pawn && pieceUnder.GetPlayer() == chessPiece.GetPlayer())
+//                    totalScore -= isCurrent? 0.5 : -0.5; // penalty for 2 pawns in one column (doubled)
+//
+//                bool isolated = true;
+//                for (int i = -1; i <= 1; i++) // square 3x3 with pawn in the center
+//                {
+//                    for (int j = -1; j <= 1; j++)
+//                    {
+//                        if ((i != 0 || j != 0) && chessPiece.Position.Item1 + i <= 7 &&
+//                            chessPiece.Position.Item1 + i >= 0 &&
+//                            chessPiece.Position.Item2 + j <= 7 && chessPiece.Position.Item2 + j >= 0
+//                            && chessBoard.GetPieceInPosition(new Tuple<int, int>(chessPiece.Position.Item1 + i,
+//                                chessPiece.Position.Item1 + j)) != null)
+//                            isolated = false;
+//                    }
+//                }
+//
+//                if (isolated) totalScore -= isCurrent ? 0.5 : -0.5; // pawn without any other piece around it(isolated)
+//            }
+
+            if (isCurrent)
+                totalScore += PieceValues[chessPiece.GetPieceType()];
+            else totalScore -= PieceValues[chessPiece.GetPieceType()];
+
+            return (int) Math.Round(totalScore);
         }
 
         private static int CountScore(ChessBoard cb, Player player = Player.White)
         {
             int i = 0;
             foreach (var piece in cb.Pieces)
-                i += GetPieceScore(piece.Value, player);
+                i += GetPieceScore(cb, piece.Value, player);
 
             return i;
         }
